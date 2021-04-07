@@ -35,4 +35,3 @@ def csv_merge():
         df.to_csv('data.csv',encoding="utf_8_sig",index=False, header=False, mode='a+')
     print(u'合并完毕！')
 csv_spilit()
-#csv_merge()
