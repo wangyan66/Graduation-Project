@@ -1,5 +1,7 @@
 from torchtext.legacy import data
 from torchtext.vocab import Vectors
+import torch
+import torch.nn.functional as F
 from tqdm import tqdm
 import pandas as pd
 import numpy as np
@@ -9,7 +11,7 @@ import re
 import jieba
 class MyDataset(data.Dataset):
 
-    def __init__(self, data, text_field, label_field, test=False, aug=False, **kwargs):
+    def __init__(self, datas, text_field, label_field, test=False, aug=False, **kwargs):
         fields = [("text", text_field), ("label", label_field)]
         
         examples = []
@@ -18,10 +20,10 @@ class MyDataset(data.Dataset):
 
         if test:
             # 如果为测试集，则不加载label
-            for text in tqdm(data['text']):
+            for text in tqdm(datas['text']):
                 examples.append(data.Example.fromlist([text, None], fields))
         else:
-            for text, label in tqdm(zip(data['text'], data['label'])):
+            for text, label in tqdm(zip(datas['text'], datas['label'])):
                 if aug:
                     # do augmentation
                     rate = random.random()
@@ -30,7 +32,7 @@ class MyDataset(data.Dataset):
                     else:
                         text = self.shuffle(text)
                 # Example: Defines a single training or test example.Stores each column of the example as an attribute.
-                examples.append(data.Example.fromlist([None, text, label], fields))
+                examples.append(data.Example.fromlist([text, label], fields))
         # 之前是一些预处理操作，此处调用super初始化父类，构造自定义的Dataset类。
         super(MyDataset, self).__init__(examples, fields, **kwargs)
 
@@ -85,7 +87,7 @@ def load_data(args,train_data,valid_data):
     # stop_words = get_stop_words() # 加载停用词表
     '''
     如果需要设置文本的长度，则设置fix_length,否则torchtext自动将文本长度处理为最大样本长度
-    text = data.Field(sequential=True, tokenize=tokenizer, fix_length=args.max_len, stop_words=stop_words)
+    text = data.Field(sequential=True, tokenize=tokenizer, fix_length=args.ma_len, stop_words=stop_words)
     '''
     #Field定义怎么处理数据
     TEXT = data.Field(sequential=True, lower=True)
@@ -93,6 +95,7 @@ def load_data(args,train_data,valid_data):
     
     
     #dataset
+    '''
     train, val = data.TabularDataset.splits(
             path='data/',
             skip_header=True,
@@ -101,17 +104,18 @@ def load_data(args,train_data,valid_data):
             format='csv',
             fields=[('text', text),('label', label)],#告诉fields处理哪些数据+Field怎么处理数据
         )
+    '''
     train = MyDataset(train_data, text_field=TEXT, label_field=LABEL, test=False)
-    valid = MyDataset(valid_data, text_field=TEXT, label_field=LABEL, test=False)
+    val = MyDataset(valid_data, text_field=TEXT, label_field=LABEL, test=False)
     #构建词表
     if args.static:
-        text.build_vocab(train, val, vectors=Vectors(name="data/model.vector")) # 此处改为你自己的词向量
-        args.embedding_dim = text.vocab.vectors.size()[-1]
-        args.vectors = text.vocab.vectors
+        TEXT.build_vocab(train, val, vectors=Vectors(name="data/word2vec.vector")) # 此处改为你自己的词向量
+        args.embedding_dim = TEXT.vocab.vectors.size()[-1]
+        args.vectors = TEXT.vocab.vectors
 
-    else: text.build_vocab(train, val)
+    else: TEXT.build_vocab(train, val)
 
-    label.build_vocab(train, val)
+    LABEL.build_vocab(train, val)
     if args.cuda:
         run_device= torch.device('cuda')
     #设置迭代器
@@ -121,8 +125,8 @@ def load_data(args,train_data,valid_data):
             batch_sizes=(args.batch_size, 128), # 训练集设置batch_size,验证集整个集合用于测试
             device=run_device
     )
-    args.vocab_size = len(text.vocab)
-    args.label_num = len(label.vocab)
+    args.vocab_size = len(TEXT.vocab)
+    args.label_num = len(LABEL.vocab)
     return train_iter, val_iter
 
 # import torchtext.vocab as Vocab

@@ -5,7 +5,8 @@ import torch
 import torch.nn.functional as F
 import data_process
 from textcnn import TextCNN
-
+import pandas as pd
+import time
 parser = argparse.ArgumentParser(description='TextCNN text classifier')
 
 parser.add_argument('-lr', type=float, default=0.001, help='学习率')
@@ -31,16 +32,16 @@ def get_kfold_data(k, i, X):
      
     # 返回第 i+1 折 (i = 0 -> k-1) 交叉验证时所需要的训练和验证数据，X_train为训练集，X_valid为验证集
     fold_size = X.shape[0] // k  # 每份的个数:数据总条数/折数（组数）
-    
+    print(X.shape)
     val_start = i * fold_size
     if i != k - 1:
         val_end = (i + 1) * fold_size
-        X_valid = X[val_start:val_end]
-        X_train = torch.cat((X[0:val_start], X[val_end:]), dim = 0)
+        X_valid = X.iloc[val_start:val_end,:]
+        X_train = pd.concat((X.iloc[0:val_start,:], X.iloc[val_end:,:]), axis = 0)
         # y_train = torch.cat((y[0:val_start], y[val_end:]), dim = 0)
     else:  # 若是最后一折交叉验证
-        X_valid = X[val_start:]    # 若不能整除，将多的case放在最后一折里
-        X_train = X[0:val_start]
+        X_valid = X.iloc[val_start:,:]    # 若不能整除，将多的case放在最后一折里
+        X_train = X.iloc[0:val_start,:]
         # y_train = y[0:val_start]
         
     return X_train, X_valid,
@@ -58,7 +59,8 @@ def train(args,train_iter,dev_iter):
     last_step = 0
     model.train()
     for epoch in range(1, args.epoch + 1):
-        print("*********Epoch:%d",epoch)
+        print('*'*25,'Epoch:',epoch,'*'*25)
+        stime = time.time()
         for batch in train_iter:
             feature, target = batch.text, batch.label
             # t_()函数表示将(max_len, batch_size)转置为(batch_size, max_len)
@@ -90,10 +92,13 @@ def train(args,train_iter,dev_iter):
                     if args.save_best:
                         print('Saving best model, acc: {:.4f}%\n'.format(best_acc))
                         save(model, args.save_dir, 'best', steps)
-                # else:
-                #     if steps - last_step >= args.early_stopping:
-                #         print('\nearly stop by {} steps, acc: {:.4f}%'.format(args.early_stopping, best_acc))
-                #         raise KeyboardInterrupt
+                else:
+                    if steps - last_step >= args.early_stopping:
+                        print('\nepoch {} early stop by {} steps, acc: {:.4f}%'.format(epoch,args.early_stopping, best_acc))
+                        # raise KeyboardInterrupt
+                        break;
+        etime = time.time()
+        print('第',epoch,'个epoch耗时：{:.4f}s'.format(etime-stime))
     return train_acc,dev_acc
 
 '''
@@ -127,35 +132,39 @@ def save(model, save_dir, save_prefix, steps):
     save_prefix = os.path.join(save_dir, save_prefix)
     save_path = '{}_steps_{}.pt'.format(save_prefix, steps)
     torch.save(model.state_dict(), save_path)
-def k_fold_train(args){
+def k_fold_train(args):
 
     train_loss_sum, valid_loss_sum = 0, 0
     train_acc_sum , valid_acc_sum = 0, 0
-    
+    k=10
+    path='data/data.csv'
+    csv_data = pd.read_csv(path,header=0)
     for i in range(k):
+        stime = time.time()
         print('*'*25,'第', i + 1,'折','*'*25)
-        trian_data,valid_data = get_kfold_data(k, i, X_train)    # 获取k折交叉验证的训练和验证数据
+        train_data,valid_data = get_kfold_data(k, i, csv_data)    # 获取k折交叉验证的训练和验证数据
         train_iter, dev_iter = data_process.load_data(args,train_data,valid_data) # 返回对应的迭代器
         print('数据处理完成')
-        train(args,train_iter,dev_iter)#开始训练
+        train_cc,val_acc = train(args,train_iter,dev_iter)#开始训练
         # 每份数据进行训练
-        train_loss, val_loss, train_acc, val_acc = traink(snet, *data, batch_size, learning_rate,  num_epochs) 
+        # train_acc, val_acc = traink(snet, *data, batch_size, learning_rate,  num_epochs) 
        
-        
-        print('train_acc:{:.3f}%'.format(train_acc[-1]))
-        print('valid_acc:{:.3f}%\n'.format(val_acc[-1]))
+        etime = time.time()
+        print('第',i+1,'折耗时：{:.4f}s'.format(etime-stime))
+        print('train_acc:{:.4f}%'.format(train_acc))
+        print('valid_acc:{:.4f}%\n'.format(val_acc))
         
         # train_loss_sum += train_loss[-1]
         # valid_loss_sum += val_loss[-1]
-        train_acc_sum += train_acc[-1]
-        valid_acc_sum += val_acc[-1]
+        train_acc_sum += train_acc
+        valid_acc_sum += val_acc
         
     print('\n', '#'*10,'最终k折交叉验证结果','#'*10) 
     
 
-    print('average train accuracy:{:.3f}%'.format(train_acc_sum/k))
-    print('average valid accuracy:{:.3f}%'.format(valid_acc_sum/k))
+    print('average train accuracy:{:.4f}%'.format(train_acc_sum/k))
+    print('average valid accuracy:{:.4f}%'.format(valid_acc_sum/k))
 
     return 
-}
+
 k_fold_train(args)
