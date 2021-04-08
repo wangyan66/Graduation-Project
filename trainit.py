@@ -10,11 +10,11 @@ import time
 parser = argparse.ArgumentParser(description='TextCNN text classifier')
 
 parser.add_argument('-lr', type=float, default=0.001, help='学习率')
-parser.add_argument('-batch-size', type=int, default=128)
+parser.add_argument('-batch-size', type=int, default=256)
 parser.add_argument('-epoch', type=int, default=20)
 parser.add_argument('-filter-num', type=int, default=100, help='卷积核的个数')
 parser.add_argument('-filter-sizes', type=str, default='3,4,5', help='不同卷积核大小')
-parser.add_argument('-embedding-dim', type=int, default=128, help='词向量的维度')
+parser.add_argument('-embedding-dim', type=int, default=100, help='词向量的维度')
 parser.add_argument('-dropout', type=float, default=0.5)
 parser.add_argument('-label-num', type=int, default=2, help='标签个数')
 parser.add_argument('-static', type=bool, default=False, help='是否使用预训练词向量')
@@ -52,7 +52,8 @@ def train(args,train_iter,dev_iter):
     # print('加载数据完成')
     # print(args.vocab_size)
     model = TextCNN(args)
-    if args.cuda: model.cuda()
+    if args.cuda:
+        model.cuda()
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     steps = 0
     best_acc = 0
@@ -92,11 +93,11 @@ def train(args,train_iter,dev_iter):
                     if args.save_best:
                         print('Saving best model, acc: {:.4f}%\n'.format(best_acc))
                         save(model, args.save_dir, 'best', steps)
-                else:
-                    if steps - last_step >= args.early_stopping:
-                        print('\nepoch {} early stop by {} steps, acc: {:.4f}%'.format(epoch,args.early_stopping, best_acc))
-                        # raise KeyboardInterrupt
-                        break;
+                # else:
+                #     if steps - last_step >= args.early_stopping:
+                #         print('\nepoch {} early stop by {} steps, acc: {:.4f}%'.format(epoch,args.early_stopping, best_acc))
+                #         # raise KeyboardInterrupt
+                #         break;
         etime = time.time()
         print('第',epoch,'个epoch耗时：{:.4f}s'.format(etime-stime))
     return train_acc,dev_acc
@@ -145,7 +146,7 @@ def k_fold_train(args):
         train_data,valid_data = get_kfold_data(k, i, csv_data)    # 获取k折交叉验证的训练和验证数据
         train_iter, dev_iter = data_process.load_data(args,train_data,valid_data) # 返回对应的迭代器
         print('数据处理完成')
-        train_cc,val_acc = train(args,train_iter,dev_iter)#开始训练
+        train_acc,val_acc = train(args,train_iter,dev_iter)#开始训练
         # 每份数据进行训练
         # train_acc, val_acc = traink(snet, *data, batch_size, learning_rate,  num_epochs) 
        

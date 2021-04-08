@@ -116,13 +116,16 @@ def load_data(args,train_data,valid_data):
     else: TEXT.build_vocab(train, val)
 
     LABEL.build_vocab(train, val)
+
     if args.cuda:
         run_device= torch.device('cuda')
+    else:
+        run_device= torch.device('cpu')
     #设置迭代器
     train_iter, val_iter = data.Iterator.splits(
             (train, val),
             sort_key=lambda x: len(x.text),
-            batch_sizes=(args.batch_size, 128), # 训练集设置batch_size,验证集整个集合用于测试
+            batch_sizes=(args.batch_size, 1024), # 训练集设置batch_size,验证集整个集合用于测试
             device=run_device
     )
     args.vocab_size = len(TEXT.vocab)
