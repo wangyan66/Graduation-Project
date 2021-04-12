@@ -4,25 +4,35 @@ import logging
 import os
 class MyCorpus:
     def __iter__(self):
-        for i in ['RS232-T1000','RS232-T1100','RS232-T1200','RS232-T1300','RS232-T1400','RS232-T1500','RS232-T1600']:
-        #     for j in ['truelabel.txt','falselabel.txt']:
-        #         corpus_path = os.path.join(os.getcwd(),i,j)
-        #         print(i,j)
-        #         for line in open(corpus_path):
-        #             # assume there's one document per line, tokens separated by whitespace
-        #              yield simple_preprocess(line)
-        # for line in open('ans.txt'):
-        #     yield re.split('[, ]',line)
-            path = os.path.join(i,'text.txt')
-            for line in open(path):
-                yield gensim.utils.simple_preprocess(line)
+        # for i in ['RS232-T1000','RS232-T1100','RS232-T1200','RS232-T1300','RS232-T1400','RS232-T1500','RS232-T1600']:
+        # #     for j in ['truelabel.txt','falselabel.txt']:
+        # #         corpus_path = os.path.join(os.getcwd(),i,j)
+        # #         print(i,j)
+        # #         for line in open(corpus_path):
+        # #             # assume there's one document per line, tokens separated by whitespace
+        # #              yield simple_preprocess(line)
+        # # for line in open('ans.txt'):
+        # #     yield re.split('[, ]',line)
+        #     path = os.path.join(i,'text.txt')
+        #     for line in open(path):
+        #         # yield gensim.utils.simple_preprocess(line)
+        #         yield line.lower()
+        for line in open('text.txt'):
+            # print(gensim.utils.simple_preprocess(line, max_len=30))
+            yield line.split()
 logging.basicConfig(format='%(asctime)s:%(levelname)s: %(message)s', level=logging.INFO)
 sentences = MyCorpus()
 # for v in sentences:
-    # print(v)
+#     print(v)
 model=gensim.models.Word2Vec(sentences,sg=1,vector_size=100,window=5,min_count=2,negative=3,sample=0.001,hs=1,workers=4, epochs=10)
-# model.wv.save_word2vec_format("model.bin", binary=True)
+model.wv.save_word2vec_format("model.bin", binary=True)
 model.wv.save_word2vec_format('word2vec.vector')
+
+# hh=gensim.utils.simple_preprocess("usdad12",deacc=False)
+# print("iasda11 asdzxc22".split())
+# print(isinstance(hh,list))
+
+
 # import torchtext.vocab as Vocab
 # import torch
 # import torch.nn as nn

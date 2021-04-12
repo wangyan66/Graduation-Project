@@ -4,7 +4,7 @@ import random
 import os
 import glob
 def csv_spilit():
-    data = pd.read_csv("data/data.csv",',',error_bad_lines=False)#我的数据集是两列，一列字符串，一列为0,1的label
+    data = pd.read_csv("RS232-T1000/data.csv",',',error_bad_lines=False)#我的数据集是两列，一列字符串，一列为0,1的label
     data = np.array(data)
     random.shuffle(data)#随机打乱
     #取前90%为训练集
