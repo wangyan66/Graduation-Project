@@ -405,23 +405,23 @@ void output_Sentence_length(ofstream& outFile,int len){
                 	if(v[R[len][len*i+j]].tag) tro_flag = true;
                 	outFile<<v[R[len][(len+1)*i+j]].type<<" ";
 				}
-//                if(tro_flag){
-//                    outFile<<","<<"1";
-//                    negtive++;
-//                }
-//                else 
-//                {
-//                    outFile<<","<<"0";
-//                    positive++;
-//                }
+                if(tro_flag){
+                    outFile<<","<<"1";
+                    negtive++;
+                }
+                else 
+                {
+                    outFile<<","<<"0";
+                    positive++;
+                }
                 outFile<<endl;
 	}
 }
 void count_sentence(int len){
 	ofstream outFile;  
-    outFile.open("text.txt", ios::out); 
-//	outFile.open("data.csv",ios::out);
-//	outFile<<"text"<<","<<"label"<<endl;
+//    outFile.open("text.txt", ios::out); 
+	outFile.open("data.csv",ios::out);
+	outFile<<"text"<<","<<"label"<<endl;
 	for(int i=1;i<id;i++){
 		
 		if(v[i].type != "line"){
