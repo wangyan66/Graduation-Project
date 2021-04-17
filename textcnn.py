@@ -2,6 +2,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import os
+import sys
+
 import gensim
 class TextCNN(nn.Module):
     # 多通道textcnn
@@ -19,7 +22,8 @@ class TextCNN(nn.Module):
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
         if args.static: # 如果使用预训练词向量，则提前加载，当不需要微调时设置freeze为True
             self.embedding = self.embedding.from_pretrained(args.vectors, freeze=not args.fine_tune)
-
+        # print(args.vectors)
+        print(self.embedding.weight)
         self.convs = nn.ModuleList(
             [nn.Conv2d(1, filter_num, (fsz, embedding_dim)) for fsz in filter_sizes])
         self.dropout = nn.Dropout(args.dropout)
@@ -27,7 +31,9 @@ class TextCNN(nn.Module):
 
     def forward(self, x):
         # 输入x的维度为(batch_size, max_len), max_len可以通过torchtext设置或自动获取为训练样本的最大=长度
+        # print(x)
         x = self.embedding(x) # 经过embedding,x的维度为(batch_size, max_len, embedding_dim)
+        # print("embedding输出：",x)
 
         # 经过view函数x的维度变为(batch_size, input_chanel=1, w=max_len, h=embedding_dim)
         x = x.view(x.size(0), 1, x.size(1), self.args.embedding_dim)

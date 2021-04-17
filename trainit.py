@@ -10,7 +10,7 @@ import time
 parser = argparse.ArgumentParser(description='TextCNN text classifier')
 
 parser.add_argument('-lr', type=float, default=0.001, help='学习率')
-parser.add_argument('-batch-size', type=int, default=256)
+parser.add_argument('-batch-size', type=int, default=128)
 parser.add_argument('-epoch', type=int, default=20)
 parser.add_argument('-filter-num', type=int, default=100, help='卷积核的个数')
 parser.add_argument('-filter-sizes', type=str, default='3,4,5', help='不同卷积核大小')
@@ -46,7 +46,7 @@ def get_kfold_data(k, i, X):
         
     return X_train, X_valid,
 
-def train(args,train_iter,dev_iter):
+def train(args,train_iter,dev_iter,test_iter):
     # print(args.vocab_size)
     # train_iter, dev_iter = data_process.load_data(args) # 将数据分为训练集和验证集
     # print('加载数据完成')
@@ -62,6 +62,7 @@ def train(args,train_iter,dev_iter):
     for epoch in range(1, args.epoch + 1):
         print('*'*25,'Epoch:',epoch,'*'*25)
         stime = time.time()
+        model.train()
         for batch in train_iter:
             feature, target = batch.text, batch.label
             # t_()函数表示将(max_len, batch_size)转置为(batch_size, max_len)
@@ -85,28 +86,37 @@ def train(args,train_iter,dev_iter):
                                                                              train_acc,
                                                                              corrects,
                                                                              batch.batch_size))
-            if steps % args.test_interval == 0:
-                dev_acc = eval(dev_iter, model, args)
-                if dev_acc > best_acc:
-                    best_acc = dev_acc
-                    last_step = steps
-                    if args.save_best:
-                        print('Saving best model, acc: {:.4f}%\n'.format(best_acc))
-                        save(model, args.save_dir, 'best', steps)
+            # if steps % args.test_interval == 0:
+            #     # dev_acc = eval(dev_iter, model, args)
+            #     dev_acc = test(test_iter,model,args)
+            #     if dev_acc > best_acc:
+            #         best_acc = dev_acc
+            #         last_step = steps
+            #         if args.save_best:
+            #             print('Saving best model, acc: {:.4f}%\n'.format(best_acc))
+            #             save(model, args.save_dir, 'best', steps,epoch)
                 # else:
                 #     if steps - last_step >= args.early_stopping:
                 #         print('\nepoch {} early stop by {} steps, acc: {:.4f}%'.format(epoch,args.early_stopping, best_acc))
                 #         # raise KeyboardInterrupt
                 #         break;
+        dev_acc = eval(dev_iter, model, args)
+        if dev_acc > best_acc:
+            best_acc = dev_acc
+            last_step = steps
+            if args.save_best:
+                print('Saving best model, acc: {:.4f}%\n'.format(best_acc))
+                save(model, args.save_dir, 'best', steps, epoch)
         etime = time.time()
         print('第',epoch,'个epoch耗时：{:.4f}s'.format(etime-stime))
-    return train_acc,dev_acc
+    return model
 
 '''
 对验证集进行测试 
 '''
 def eval(data_iter, model, args):
     corrects, avg_loss = 0, 0
+    model.eval()
     for batch in data_iter:
         feature, target = batch.text, batch.label
         with torch.no_grad():
@@ -119,7 +129,7 @@ def eval(data_iter, model, args):
         corrects += (torch.max(logits, 1)
                      [1].view(target.size()) == target).sum()
     size = len(data_iter.dataset)
-    avg_loss /= size
+    avg_loss /= len(data_iter)
     accuracy = 100.0 * corrects / size
     print('\nEvaluation - loss: {:.6f}  acc: {:.4f}%({}/{}) \n'.format(avg_loss,
                                                                        accuracy,
@@ -127,45 +137,72 @@ def eval(data_iter, model, args):
                                                                        size))
     return accuracy
 
-def save(model, save_dir, save_prefix, steps):
+def save(model, save_dir, save_prefix, steps,epochs):
     if not os.path.isdir(save_dir):
         os.makedirs(save_dir)
     save_prefix = os.path.join(save_dir, save_prefix)
-    save_path = '{}_steps_{}.pt'.format(save_prefix, steps)
+    save_path = '{}_epoch_{}_steps_{}.pt'.format(save_prefix,epochs,steps)
     torch.save(model.state_dict(), save_path)
 def k_fold_train(args):
 
-    train_loss_sum, valid_loss_sum = 0, 0
-    train_acc_sum , valid_acc_sum = 0, 0
+    # train_loss_sum, valid_loss_sum = 0, 0
+    test_acc_sum , test_loss_sum = 0, 0
     k=10
-    path='data/data.csv'
-    csv_data = pd.read_csv(path,header=0)
+    data_path='data_test/data.csv'
+    test_path='data_test/data6.csv'
+    csv_data = pd.read_csv(data_path,header=0)
+    test_data = pd.read_csv(test_path, header=0)
     for i in range(k):
         stime = time.time()
         print('*'*25,'第', i + 1,'折','*'*25)
         train_data,valid_data = get_kfold_data(k, i, csv_data)    # 获取k折交叉验证的训练和验证数据
-        train_iter, dev_iter = data_process.load_data(args,train_data,valid_data) # 返回对应的迭代器
+        train_iter, dev_iter,test_iter= data_process.load_data(args,train_data,valid_data,test_data) # 返回对应的迭代器
         print('数据处理完成')
-        train_acc,val_acc = train(args,train_iter,dev_iter)#开始训练
+        model= train(args,train_iter,dev_iter,test_iter)#开始训练
         # 每份数据进行训练
         # train_acc, val_acc = traink(snet, *data, batch_size, learning_rate,  num_epochs) 
-       
+        test_acc, test_loss = test(test_iter,model,args)
         etime = time.time()
+
         print('第',i+1,'折耗时：{:.4f}s'.format(etime-stime))
-        print('train_acc:{:.4f}%'.format(train_acc))
-        print('valid_acc:{:.4f}%\n'.format(val_acc))
+        print('test_acc:{:.4f}%'.format(test_acc))
+        print('test_loss:{:.4f}%\n'.format(test_loss))
         
         # train_loss_sum += train_loss[-1]
         # valid_loss_sum += val_loss[-1]
-        train_acc_sum += train_acc
-        valid_acc_sum += val_acc
+        test_acc_sum += test_acc
+        test_loss_sum += test_loss
         
     print('\n', '#'*10,'最终k折交叉验证结果','#'*10) 
     
 
-    print('average train accuracy:{:.4f}%'.format(train_acc_sum/k))
-    print('average valid accuracy:{:.4f}%'.format(valid_acc_sum/k))
+    print('average test accuracy:{:.4f}%'.format(test_acc_sum/k))
+    print('average test loss:{:.4f}%'.format(test_loss_sum/k))
 
     return 
-
+def test(data_iter, model, args):
+    corrects, avg_loss = 0, 0
+    model.eval()
+    for batch in data_iter:
+        feature, target = batch.text, batch.label
+        with torch.no_grad():
+            feature.t_(), target.sub_(1)  # target减去1
+        if args.cuda:
+            feature, target = feature.cuda(), target.cuda()
+        logits = model(feature)
+        loss = F.cross_entropy(logits, target)
+        print(loss.item())
+        avg_loss += loss.item()
+        corrects += (torch.max(logits, 1)
+                     [1].view(target.size()) == target).sum()
+    size = len(data_iter.dataset)
+    print(size)
+    avg_loss /= len(data_iter)
+    accuracy = 100.0 * corrects / size
+    print('\ntest - loss: {:.6f}  acc: {:.4f}%({}/{}) \n'.format(avg_loss,
+                                                                       accuracy,
+                                                                       corrects,
+                                                                       size))
+    return accuracy,avg_loss
 k_fold_train(args)
+

@@ -69,8 +69,8 @@ string out_csv_path;
 // ============主函数=====================
 int main(int argc, char* argv[]){
 	 
-    normal_in_txt_path =  "uart.txt"; //输入正常线网文件
-    trojan_in_txt_path = "trojan.txt"; //输入木马文件
+    normal_in_txt_path =  "data_test/uart.txt"; //输入正常线网文件
+    trojan_in_txt_path = "data_test/trojan.txt"; //输入木马文件
     //out_csv_path = argv[2];
     init();
 //    count_func();
@@ -389,8 +389,6 @@ void outputtxt(ofstream& outFile){
             }
         }
     }
-    
-    //outFile.close();
 }
 void output_Sentence_length(ofstream& outFile,int len){
 	int size = R[len].size()/(len+1);
@@ -419,28 +417,31 @@ void output_Sentence_length(ofstream& outFile,int len){
 }
 void count_sentence(int len){
 	ofstream outFile;  
-//    outFile.open("text.txt", ios::out); 
-	outFile.open("data.csv",ios::out);
+//    outFile.open("data_test/text.txt", ios::out); 
+	outFile.open("data_test/data.csv",ios::out);
 	outFile<<"text"<<","<<"label"<<endl;
 	for(int i=1;i<id;i++){
 		
 		if(v[i].type != "line"){
         //    R[0].pb(v[i].name);
         //    cout<<R[0][0]<<endl; 
-			path_all(ed, i, i,len, rpath, -1, "");
+			path_all(ed, i, i, 1, rpath, -1, "");
 			//path_all(edf, i, i, 1, rpath, -1, "");
 			ms(vis, false);
 			
-//			path_all(ed, i, i, 2, rpath, -1, "");
+			path_all(ed, i, i, 2, rpath, -1, "");
 			//path_all(edf, i, i, 2, rpath, -1, "");
 			
-//			ms(vis, false);
-//			path_all(ed, i, i, 3, rpath, -1, "");
+			ms(vis, false);
+			path_all(ed, i, i, 3, rpath, -1, "");
 			//path_all(edf, i, i, 3, rpath, -1, "");
-//			ms(vis, false);
-//			outputtxt(outFile);
-			output_Sentence_length(outFile,len);
-            R[len].clear();
+			ms(vis, false);
+			outputtxt(outFile);
+//			output_Sentence_length(outFile,len);
+			R[1].clear();
+			R[2].clear();
+			R[3].clear();
+//            R[len].clear();
 		}
 	}
 	outFile.close();

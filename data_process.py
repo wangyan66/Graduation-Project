@@ -9,6 +9,8 @@ import random
 import os
 import re
 import jieba
+import scipy.io as io
+from torchtext.vocab import GloVe
 class MyDataset(data.Dataset):
 
     def __init__(self, datas, text_field, label_field, test=False, aug=False, **kwargs):
@@ -50,9 +52,7 @@ class MyDataset(data.Dataset):
         return ' '.join(text)
 
 def tokenizer(text): # create a tokenizer function
-    regex = re.compile(r'[^\u4e00-\u9fa5aA-Za-z0-9]')
-    text = regex.sub(' ', text)
-    return [word for word in jieba.cut(text) if word.strip()]
+    return text
 
 # 去停用词
 def get_stop_words():
@@ -64,35 +64,19 @@ def get_stop_words():
         stop_words.append(line)
     return stop_words
 
-def get_kfold_data(k, i, X, y):  
-     
-    # 返回第 i+1 折 (i = 0 -> k-1) 交叉验证时所需要的训练和验证数据，X_train为训练集，X_valid为验证集
-    fold_size = X.shape[0] // k  # 每份的个数:数据总条数/折数（组数）
-    
-    val_start = i * fold_size
-    if i != k - 1:
-        val_end = (i + 1) * fold_size
-        X_valid, y_valid = X[val_start:val_end], y[val_start:val_end]
-        X_train = torch.cat((X[0:val_start], X[val_end:]), dim = 0)
-        y_train = torch.cat((y[0:val_start], y[val_end:]), dim = 0)
-    else:  # 若是最后一折交叉验证
-        X_valid, y_valid = X[val_start:], y[val_start:]     # 若不能整除，将多的case放在最后一折里
-        X_train = X[0:val_start]
-        y_train = y[0:val_start]
-        
-    return X_train, X_valid
 
-def load_data(args,train_data,valid_data):
+def load_data(args,train_data,valid_data,test_data):
     print('加载数据中...')
     # stop_words = get_stop_words() # 加载停用词表
     '''
     如果需要设置文本的长度，则设置fix_length,否则torchtext自动将文本长度处理为最大样本长度
     text = data.Field(sequential=True, tokenize=tokenizer, fix_length=args.ma_len, stop_words=stop_words)
     '''
+
     #Field定义怎么处理数据
-    TEXT = data.Field(sequential=True, lower=True)
+    TEXT = data.Field(sequential=True,lower=False)
     LABEL = data.Field(sequential=False)
-    
+
     
     #dataset
     '''
@@ -107,30 +91,32 @@ def load_data(args,train_data,valid_data):
     '''
     train = MyDataset(train_data, text_field=TEXT, label_field=LABEL, test=False)
     val = MyDataset(valid_data, text_field=TEXT, label_field=LABEL, test=False)
+    test = MyDataset(test_data, text_field=TEXT, label_field=LABEL, test=False) #这边测试集也加载label
     #构建词表
     if args.static:
-        TEXT.build_vocab(train, val, vectors=Vectors(name="data/word2vec.vector")) # 此处改为你自己的词向量
+        TEXT.build_vocab(train ,vectors=Vectors(name='data_test/word2vec.txt')) # 此处改为你自己的词向量
+        print(TEXT.vocab.stoi)
+        print("加载的词向量:", TEXT.vocab.vectors,TEXT.vocab.vectors.size())
         args.embedding_dim = TEXT.vocab.vectors.size()[-1]
         args.vectors = TEXT.vocab.vectors
-
-    else: TEXT.build_vocab(train, val)
-
-    LABEL.build_vocab(train, val)
+    else:
+        TEXT.build_vocab(train)
+    LABEL.build_vocab(train)
 
     if args.cuda:
         run_device= torch.device('cuda')
     else:
         run_device= torch.device('cpu')
     #设置迭代器
-    train_iter, val_iter = data.Iterator.splits(
-            (train, val),
+    train_iter, val_iter, test_iter= data.Iterator.splits(
+            (train, val, test),
             sort_key=lambda x: len(x.text),
-            batch_sizes=(args.batch_size, 1024), # 训练集设置batch_size,验证集整个集合用于测试
+            batch_sizes=(args.batch_size, 1024,len(test)), # 训练集设置batch_size,验证集整个集合用于测试
             device=run_device
     )
     args.vocab_size = len(TEXT.vocab)
     args.label_num = len(LABEL.vocab)
-    return train_iter, val_iter
+    return train_iter, val_iter,test_iter
 
 # import torchtext.vocab as Vocab
 # import torch
