@@ -23,12 +23,17 @@ def get_kfold_data(k, i, X, y):
         
     return X_train, y_train, X_valid,y_valid
 # 创建一个数据集
-X = torch.rand(500, 32, 32)
+X = torch.rand(500, 100, 10)
 Y = torch.rand(500, 1)
-# random shuffle
-index = [i for i in range(len(X))] 
-print(len(X))
-print(range(len(X)))
-random.shuffle(index)
-X = X[index]
-Y = Y[index]
+# X = X.view(X.size(0),X.size(1), X.size(2),1)
+m  = nn.Conv1d(15,100,3)
+out = m(X)
+print(out)
+X.view()
+# x = torch.rand((2,2,3))
+# y = torch.rand((2,2,3))
+# print("x:",x)
+# print("y:",y)
+# print("dim=0:", torch.cat((x,y),dim=0).size())
+# print("dim=1:", torch.cat((x,y), dim=1).size())
+# print("dim=2:", torch.cat((x, y), dim=2).size())

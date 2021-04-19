@@ -44,7 +44,7 @@ map<int, bool>pin; //主输入
 map<int, bool>pout; //主输出
 vi IN;
 vi OUT;
-vector<int> R[20];
+vector<int> R[50];
 int positive = 0;
 int negtive = 0;
 int rpath[maxn];
@@ -74,7 +74,10 @@ int main(int argc, char* argv[]){
     //out_csv_path = argv[2];
     init();
 //    count_func();
-	count_sentence(12);
+	for(int i=1;i<=10;i++){
+		count_sentence(i);
+	}
+	
 //	outputcsv(" ");
     //cout<<positive<<endl<<negtive;
 	return 0;
@@ -396,52 +399,56 @@ void output_Sentence_length(ofstream& outFile,int len){
 //        size3 = 1;
 //        R[len+1].pb(0);
 //    }
-	cout<<size<<endl;
+//	cout<<size<<endl;
+//	cout<<"*********************len:"<<len<<"size:"<<size<<endl;
     for(int i=0;i<size;i++){
     	bool tro_flag = false;
                 for(int j=0;j<=len;j++){
                 	if(v[R[len][len*i+j]].tag) tro_flag = true;
                 	outFile<<v[R[len][(len+1)*i+j]].type<<" ";
 				}
-                if(tro_flag){
-                    outFile<<","<<"1";
-                    negtive++;
-                }
-                else 
-                {
-                    outFile<<","<<"0";
-                    positive++;
-                }
+//                if(tro_flag){
+//                    outFile<<","<<"1";
+//                    negtive++;
+//                }
+//                else 
+//                {
+//                    outFile<<","<<"0";
+//                    positive++;
+//                }
                 outFile<<endl;
 	}
 }
 void count_sentence(int len){
-	ofstream outFile;  
-//    outFile.open("data_test/text.txt", ios::out); 
-	outFile.open("data_test/data.csv",ios::out);
-	outFile<<"text"<<","<<"label"<<endl;
+	ofstream outFile;
+	string str1 = "data_test/text";
+	string str2 = std::to_string(len);
+	string str = str1+str2+".txt";
+    outFile.open(str, ios::out); 
+//	outFile.open("data_test/data.csv",ios::out);
+//	outFile<<"text"<<","<<"label"<<endl;
 	for(int i=1;i<id;i++){
 		
 		if(v[i].type != "line"){
         //    R[0].pb(v[i].name);
         //    cout<<R[0][0]<<endl; 
-			path_all(ed, i, i, 1, rpath, -1, "");
+			path_all(ed, i, i, len, rpath, -1, "");
 			//path_all(edf, i, i, 1, rpath, -1, "");
 			ms(vis, false);
 			
-			path_all(ed, i, i, 2, rpath, -1, "");
+//			path_all(ed, i, i, 2, rpath, -1, "");
 			//path_all(edf, i, i, 2, rpath, -1, "");
 			
-			ms(vis, false);
-			path_all(ed, i, i, 3, rpath, -1, "");
+//			ms(vis, false);
+//			path_all(ed, i, i, 3, rpath, -1, "");
 			//path_all(edf, i, i, 3, rpath, -1, "");
-			ms(vis, false);
-			outputtxt(outFile);
-//			output_Sentence_length(outFile,len);
+//			ms(vis, false);
+//			outputtxt(outFile);
+			output_Sentence_length(outFile,len);
 			R[1].clear();
 			R[2].clear();
 			R[3].clear();
-//            R[len].clear();
+            R[len].clear();
 		}
 	}
 	outFile.close();

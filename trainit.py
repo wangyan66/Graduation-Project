@@ -7,6 +7,7 @@ import data_process
 from textcnn import TextCNN
 import pandas as pd
 import time
+from collections.abc import Iterable
 parser = argparse.ArgumentParser(description='TextCNN text classifier')
 
 parser.add_argument('-lr', type=float, default=0.001, help='学习率')

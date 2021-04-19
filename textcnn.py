@@ -18,25 +18,28 @@ class TextCNN(nn.Module):
         
         vocab_size = args.vocab_size #embedding的个数
         embedding_dim = args.embedding_dim #embedding的维度
-
+        
         self.embedding = nn.Embedding(vocab_size, embedding_dim)
+        self.constant_embedding = nn.Embedding(vocab_size, embedding_dim)
         if args.static: # 如果使用预训练词向量，则提前加载，当不需要微调时设置freeze为True
             self.embedding = self.embedding.from_pretrained(args.vectors, freeze=not args.fine_tune)
+            self.constant_embedding = self.constant_embedding.from_pretrained(args.vectors, freeze=args.fine_tune)
         # print(args.vectors)
         print(self.embedding.weight)
         self.convs = nn.ModuleList(
-            [nn.Conv2d(1, filter_num, (fsz, embedding_dim)) for fsz in filter_sizes])
+            [nn.Conv2d(1, filter_num, (fsz, embedding_dim*2)) for fsz in filter_sizes])
         self.dropout = nn.Dropout(args.dropout)
         self.linear = nn.Linear(len(filter_sizes)*filter_num, label_num)
 
     def forward(self, x):
         # 输入x的维度为(batch_size, max_len), max_len可以通过torchtext设置或自动获取为训练样本的最大=长度
         # print(x)
-        x = self.embedding(x) # 经过embedding,x的维度为(batch_size, max_len, embedding_dim)
+        # x = self.embedding(x) # 经过embedding,x的维度为(batch_size, max_len, embedding_dim)
         # print("embedding输出：",x)
-
+        embeddings = torch.cat((self.embedding(x),self.constant_embedding(x)),dim=2)
+        print("embedding输出：",embeddings.size())
         # 经过view函数x的维度变为(batch_size, input_chanel=1, w=max_len, h=embedding_dim)
-        x = x.view(x.size(0), 1, x.size(1), self.args.embedding_dim)
+        x = embeddings.view(embeddings.size(0), 1, embeddings.size(1), self.args.embedding_dim*2)
 
         # 经过卷积运算,x中每个运算结果维度为(batch_size, out_chanel, w, h=1)
         x = [F.relu(conv(x)) for conv in self.convs]

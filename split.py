@@ -110,6 +110,18 @@ def generate_equal_data():
     csv_merge('data/tmp/*.csv')
 def generate_normal_data():
     csv_merge('data/*.csv')
-generate_normal_data()
+def count_func():
+    csv_list = glob.glob('data_test/*.txt')  # 查看同文件夹下的csv文件数
+    print(u'共发现%s个txt文件' % len(csv_list))
+    print(csv_list)
+    print(u'正在处理............')
+    # 读取第一个CSV文件并包含表头
+    for i in range(0, len(csv_list)):  # 循环读取同文件夹下的csv文件
+        df = pd.read_csv(csv_list[i])
+        data = np.array(df)
+        print(csv_list[i],len(data),'行')
+    print(u'统计完毕！')
+# generate_normal_data()
+count_func()
 
 
