@@ -111,7 +111,7 @@ def load_data(args,train_data,valid_data,test_data):
     train_iter, val_iter, test_iter= data.Iterator.splits(
             (train, val, test),
             sort_key=lambda x: len(x.text),
-            batch_sizes=(args.batch_size, 1024,len(test)), # 训练集设置batch_size,验证集整个集合用于测试
+            batch_sizes=(args.batch_size, 1024, 1024), # 训练集设置batch_size,验证集整个集合用于测试
             device=run_device
     )
     args.vocab_size = len(TEXT.vocab)

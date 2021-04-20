@@ -57,10 +57,13 @@ def samples_equal_split_process():
     random.shuffle(data)
     count = 0
     for d in data:
-        if (d[1] == 0 and count < len(df1)):
+        if (d[1] == 0):
             count += 1
             mylist2.append(d)
-    df2 = np.array(mylist2)
+    # 进行正样本抽样
+    data_sample = random.sample(mylist2, len(mylist1))
+    print(len(data_sample))
+    df2 = np.array(data_sample)
     df2 = pd.DataFrame(df2, columns=['text', 'label'])
     df2.to_csv('data/tmp/postive_samples.csv', index=False)
 
@@ -81,12 +84,17 @@ def samples_equal_split_process():
         random.shuffle(data)
         count = 0
         for d in data:
-            if (d[1] == 0 and count < len(df1)):
+            if (d[1] == 0):
                 count += 1
                 mylist2.append(d)
-        df2 = np.array(mylist2)
+
+        # 进行正样本抽样
+        data_sample = random.sample(mylist2, len(mylist1))
+        print(len(data_sample))
+        df2 = np.array(data_sample)
         df2 = pd.DataFrame(df2, columns=['text', 'label'])
-        df2.to_csv('data/tmp/postive_samples.csv', index = False, header = False , mode = 'a+')
+        df2.to_csv('data/tmp/postive_samples.csv', index=False, header=False, mode='a+')
+
 
 
 def postive_samples_process():
@@ -110,18 +118,5 @@ def generate_equal_data():
     csv_merge('data/tmp/*.csv')
 def generate_normal_data():
     csv_merge('data/*.csv')
-def count_func():
-    csv_list = glob.glob('data_test/*.txt')  # 查看同文件夹下的csv文件数
-    print(u'共发现%s个txt文件' % len(csv_list))
-    print(csv_list)
-    print(u'正在处理............')
-    # 读取第一个CSV文件并包含表头
-    for i in range(0, len(csv_list)):  # 循环读取同文件夹下的csv文件
-        df = pd.read_csv(csv_list[i])
-        data = np.array(df)
-        print(csv_list[i],len(data),'行')
-    print(u'统计完毕！')
-# generate_normal_data()
-count_func()
 
-
+generate_equal_data()

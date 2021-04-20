@@ -74,10 +74,7 @@ int main(int argc, char* argv[]){
     //out_csv_path = argv[2];
     init();
 //    count_func();
-	for(int i=1;i<=10;i++){
-		count_sentence(i);
-	}
-	
+	count_sentence(20);
 //	outputcsv(" ");
     //cout<<positive<<endl<<negtive;
 	return 0;
@@ -400,7 +397,6 @@ void output_Sentence_length(ofstream& outFile,int len){
 //        R[len+1].pb(0);
 //    }
 //	cout<<size<<endl;
-//	cout<<"*********************len:"<<len<<"size:"<<size<<endl;
     for(int i=0;i<size;i++){
     	bool tro_flag = false;
                 for(int j=0;j<=len;j++){
@@ -420,11 +416,8 @@ void output_Sentence_length(ofstream& outFile,int len){
 	}
 }
 void count_sentence(int len){
-	ofstream outFile;
-	string str1 = "data_test/text";
-	string str2 = std::to_string(len);
-	string str = str1+str2+".txt";
-    outFile.open(str, ios::out); 
+	ofstream outFile;  
+    outFile.open("data_test/text.txt", ios::out); 
 //	outFile.open("data_test/data.csv",ios::out);
 //	outFile<<"text"<<","<<"label"<<endl;
 	for(int i=1;i<id;i++){

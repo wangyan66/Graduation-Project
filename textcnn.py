@@ -25,7 +25,7 @@ class TextCNN(nn.Module):
             self.embedding = self.embedding.from_pretrained(args.vectors, freeze=not args.fine_tune)
             self.constant_embedding = self.constant_embedding.from_pretrained(args.vectors, freeze=args.fine_tune)
         # print(args.vectors)
-        print(self.embedding.weight)
+
         self.convs = nn.ModuleList(
             [nn.Conv2d(1, filter_num, (fsz, embedding_dim*2)) for fsz in filter_sizes])
         self.dropout = nn.Dropout(args.dropout)
@@ -36,8 +36,11 @@ class TextCNN(nn.Module):
         # print(x)
         # x = self.embedding(x) # 经过embedding,x的维度为(batch_size, max_len, embedding_dim)
         # print("embedding输出：",x)
+        # print(self.embedding.weight)
+        # print(self.constant_embedding.weight)
         embeddings = torch.cat((self.embedding(x),self.constant_embedding(x)),dim=2)
-        print("embedding输出：",embeddings.size())
+        # print("embedding输出：",embeddings.size())
+        # raise KeyboardInterrupt
         # 经过view函数x的维度变为(batch_size, input_chanel=1, w=max_len, h=embedding_dim)
         x = embeddings.view(embeddings.size(0), 1, embeddings.size(1), self.args.embedding_dim*2)
 
