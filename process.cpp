@@ -66,6 +66,7 @@ void output_Sentence_length(ofstream& outFile,int len);
 char* normal_in_txt_path;
 char* trojan_in_txt_path;
 string out_csv_path;
+void output_PandN_sentence(ofstream& outFile,int len);
 // ============主函数=====================
 int main(int argc, char* argv[]){
 	 
@@ -74,7 +75,7 @@ int main(int argc, char* argv[]){
     //out_csv_path = argv[2];
     init();
 //    count_func();
-	count_sentence(20);
+	count_sentence(5);
 //	outputcsv(" ");
     //cout<<positive<<endl<<negtive;
 	return 0;
@@ -250,7 +251,7 @@ void path_all2(vi e[], int cur, int des, int len, int path[], int d, string type
    vis[cur] = false;
    return;
 }
-void path_all(vi e[], int ori, int cur, int len, int path[], int d, string type)
+void path_all(vi e[], int ori, int cur, int len, int path[], int d, string type, bool isReverse)
 {
    
    if(type == "line"){
@@ -265,12 +266,17 @@ void path_all(vi e[], int ori, int cur, int len, int path[], int d, string type)
        if(d == len)     //满足条件，输出一条路径
        {    
             //cout<<v[ori].type<<" "<<v[ori].name<<"长度为"<<len<<"的路径为:"<<endl;
-            for(int i = 0; i <= d; i++){
-//            	cout<<v[path[i]].name<<" "; 
-            	R[len].pb(path[i]);
-            	
+            if(isReverse){
+				for(int i = d; i>=0; i--){
+            		R[len+1].pb(path[i]);
+				}
+			}else{
+				for(int i = 0; i <= d; i++){
+//            		cout<<v[path[i]].name<<" ";
+            		R[len].pb(path[i]);
+				}
 			}
-           
+           	
             return;
         }
         vis[cur]=true;
@@ -280,16 +286,10 @@ void path_all(vi e[], int ori, int cur, int len, int path[], int d, string type)
    rep(i, 0, sz) {
         int to = e[cur][i];
         if(v[to].type=="line"){
-        	path_all(e,ori, to, len, path, d, v[to].type);
+        	path_all(e,ori, to, len, path, d, v[to].type, isReverse);
 		}else if(!vis[to]){
-            path_all(e,ori, to, len, path, d, v[to].type);
-            // if(v[to].type == "line") {
-            //     get_feature_loop(e, line_id, to_id, x, base);
-            // } else {
-            // get_feature_loop(e, line_id, to_id, x+1, base);
-            // }
+            path_all(e,ori, to, len, path, d, v[to].type, isReverse);
         }
-        
     }
    vis[cur] = false;
    return;
@@ -357,35 +357,7 @@ void outputtxt(ofstream& outFile){
                     outFile<<","<<"0";
                     positive++;
                 }
-                outFile<<endl;
-			//这是输出到txt用来word2Vec的
-//            	bool tro_flag = false;
-//                if(R[1][0]==0) outFile<<"EMP"<<" DouHao ";
-//                else{
-//                	
-//                    if(v[R[1][2*i]].tag || v[R[1][2*i+1]].tag) tro_flag = true;
-//                    outFile<<v[R[1][2*i]].type<<" "<<v[R[1][2*i+1]].type<<" DouHao ";
-//                }
-//                if(R[2][0]==0) outFile<<"EMP"<<" DouHao ";
-//                else{
-//                    if(v[R[2][3*j]].tag || v[R[2][3*j+1]].tag || v[R[2][3*j+2]].tag) tro_flag = true;
-//                    outFile<<v[R[2][3*j]].type<<" "<<v[R[2][3*j+1]].type<<" "<<v[R[2][3*j+2]].type<<" DouHao ";
-//                }
-//                if(R[3][0]==0) outFile<<"EMP";
-//                else{
-//                    if(v[R[3][4*k]].tag || v[R[3][4*k+1]].tag || v[R[3][4*k+2]].tag || v[R[3][4*k+3]].tag) tro_flag = true;
-//                    outFile<<v[R[3][4*k]].type<<" "<<v[R[3][4*k+1]].type<<" "<<v[R[3][4*k+2]].type<<" "<<v[R[3][4*k+3]].type;
-//                }
-////                if(tro_flag){
-////                    outFile<<","<<"1";
-////                    negtive++;
-////                }
-////                else 
-////                {
-////                    outFile<<","<<"0";
-////                    positive++;
-////                }
-//                outFile<<endl;			 
+                outFile<<endl;			 
             }
         }
     }
@@ -415,49 +387,90 @@ void output_Sentence_length(ofstream& outFile,int len){
                 outFile<<endl;
 	}
 }
+void output_PandN_sentence(ofstream& outFile,int len){
+	int len_1 = len+1;
+	int size1 = R[len].size()/(len+1);
+	int size2 = R[len_1].size()/(len+1);
+	if(R[len].size()==0){
+        size1 = 1;
+        R[len].pb(0);
+    }
+    if(R[len_1].size()==0){
+        size2 = 1;
+        R[len_1].pb(0);
+    }
+	for(int i=0;i<size1;i++){
+		for(int j=0;j<size2;j++){
+			bool tro_flag = false;
+			for(int k=0;k<=len;k++){
+                if(R[len_1][0]!=0){
+                	if(v[R[len_1][len_1*j+k]].tag) tro_flag = true;
+                	outFile<<v[R[len_1][len_1*j+k]].type<<" ";
+				}
+			}
+			for(int k=0;k<=len;k++){
+                if(R[len][0]!=0){
+                	if(v[R[len][len_1*i+k]].tag) tro_flag = true;
+                	outFile<<v[R[len][len_1*i+k]].type<<" ";
+				}
+			}
+			if(tro_flag){
+                outFile<<","<<"1";
+                negtive++;
+            }
+            else {
+                outFile<<","<<"0";
+                positive++;
+            }
+			outFile<<endl;
+		}
+	}
+	 
+}
 void count_sentence(int len){
 	ofstream outFile;  
-    outFile.open("data_test/text.txt", ios::out); 
-//	outFile.open("data_test/data.csv",ios::out);
-//	outFile<<"text"<<","<<"label"<<endl;
+//    outFile.open("data_test/text.txt", ios::out); 
+	outFile.open("data_test/data.csv",ios::out);
+	outFile<<"text"<<","<<"label"<<endl;
 	for(int i=1;i<id;i++){
-		
 		if(v[i].type != "line"){
         //    R[0].pb(v[i].name);
-        //    cout<<R[0][0]<<endl; 
-			path_all(ed, i, i, len, rpath, -1, "");
+        //    cout<<R[0][0]<<endl;
+			path_all(ed, i, i, len, rpath, -1, "", false);
 			//path_all(edf, i, i, 1, rpath, -1, "");
 			ms(vis, false);
-			
+			path_all(edf, i, i, len, rpath, -1, "", true);
+			ms(vis, false);
 //			path_all(ed, i, i, 2, rpath, -1, "");
 			//path_all(edf, i, i, 2, rpath, -1, "");
-			
 //			ms(vis, false);
 //			path_all(ed, i, i, 3, rpath, -1, "");
 			//path_all(edf, i, i, 3, rpath, -1, "");
 //			ms(vis, false);
+			output_PandN_sentence(outFile,len);
 //			outputtxt(outFile);
-			output_Sentence_length(outFile,len);
-			R[1].clear();
-			R[2].clear();
-			R[3].clear();
+//			output_Sentence_length(outFile,len);
+//			R[1].clear();
+//			R[2].clear();
+//			R[3].clear();
             R[len].clear();
+            R[len+1].clear();
 		}
 	}
 	outFile.close();
 }
 void outputcsv(string str){
 	ofstream outFile;  
-//    outFile.open("data.csv", ios::out); // ?????????
+//    outFile.open("data.csv", ios::out);
 //    for(int i=1;i<id;i++){
-//		if(v[i].type != "line"){//????????????????
+//		if(v[i].type != "line"){
 //			outFile <<v[i].type << endl;
 //		}
 //	}
 //	outFile.close();
-	outFile.open("output.csv", ios::out); // ?????????
+	outFile.open("output.csv", ios::out); 
     for(int i=1;i<id;i++){
-		if(v[i].type == "line"){//????????????????
+		if(v[i].type == "line"){
 			outFile <<v[i].name << endl;
 		}
 	}

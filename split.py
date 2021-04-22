@@ -119,4 +119,4 @@ def generate_equal_data():
 def generate_normal_data():
     csv_merge('data/*.csv')
 
-generate_equal_data()
+csv_merge('data/*.csv')
