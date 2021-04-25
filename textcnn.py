@@ -29,7 +29,7 @@ class TextCNN(nn.Module):
         self.convs = nn.ModuleList(
             [nn.Conv2d(1, filter_num, (fsz, embedding_dim*2)) for fsz in filter_sizes])
         self.dropout = nn.Dropout(args.dropout)
-        self.linear = nn.Linear(len(filter_sizes)*filter_num, label_num)
+        self.linear = nn.Linear(len(filter_sizes)*filter_num, 2)
 
     def forward(self, x):
         # 输入x的维度为(batch_size, max_len), max_len可以通过torchtext设置或自动获取为训练样本的最大=长度
@@ -38,7 +38,7 @@ class TextCNN(nn.Module):
         # print("embedding输出：",x)
         # print(self.embedding.weight)
         # print(self.constant_embedding.weight)
-        embeddings = torch.cat((self.embedding(x),self.constant_embedding(x)),dim=2)
+        embeddings = torch.cat((self.embedding(x), self.constant_embedding(x)), dim=2)
         # print("embedding输出：",embeddings.size())
         # raise KeyboardInterrupt
         # 经过view函数x的维度变为(batch_size, input_chanel=1, w=max_len, h=embedding_dim)

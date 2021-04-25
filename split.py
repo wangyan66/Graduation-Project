@@ -2,7 +2,8 @@ import pandas as pd
 import numpy as np
 import random
 import glob
-
+import matplotlib.pyplot as plt
+import torch
 
 def csv_spilit():
     data = pd.read_csv("data/data.csv", ',', error_bad_lines=False)  # 我的数据集是两列，一列字符串，一列为0,1的label
@@ -118,5 +119,20 @@ def generate_equal_data():
     csv_merge('data/tmp/*.csv')
 def generate_normal_data():
     csv_merge('data/*.csv')
-
+# def plot_loss_acc(n):
+#     y = []
+#     for i in range(0,n):
+#         # enc = np.load('D:\MobileNet_v1\plan1-AddsingleLayer\loss\epoch_{}.npy'.format(i))
+#         # torch.save(Loss0, 'plot_dir/fold_{}_epoch_{}_'.format(k, epoch))
+#         enc = torch.load('plot_dir/fold_1_epoch_{}_'.format(i))
+#         tempy = list(enc)
+#         y += tempy
+#     x = range(0,len(y))
+#     plt.plot(x, y, '.-')
+#     plt_title = 'BATCH_SIZE = 32; LEARNING_RATE:0.001'
+#     plt.title(plt_title)
+#     plt.xlabel('per 200 times')
+#     plt.ylabel('LOSS')
+#     # plt.savefig(file_name)
+#     plt.show()
 csv_merge('data/*.csv')

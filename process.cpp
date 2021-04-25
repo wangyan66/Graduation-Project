@@ -2,6 +2,7 @@
 #include<bits/stdc++.h>
 #include <fstream>  
 #include <sstream>
+#include <string>
 #define rep(i, a, b) for(int i=a;i<=b; ++i)  
 #define per(i, a, b) for(int i=a;i>=b;--i) 
 #define de(a) cout <<#a<<" => "<<a<<endl
@@ -60,24 +61,27 @@ void build(string str, int flag); //拆解、建图
 
 // ============ feature_count_function define ================
 void count_func();
-void count_sentence(int len);
-void outputcsv(string str);
-void output_Sentence_length(ofstream& outFile,int len); 
+void count_sentence(int len,string base_path,bool isText,int file_index);
+void outputcsv(string str); 
+void output_Sentence_length(ofstream& outFile,int len,bool isText);
 char* normal_in_txt_path;
 char* trojan_in_txt_path;
 string out_csv_path;
-void output_PandN_sentence(ofstream& outFile,int len);
+void output_PandN_sentence(ofstream& outFile,int len,bool isText);
 // ============主函数=====================
 int main(int argc, char* argv[]){
-	 
-    normal_in_txt_path =  "data_test/uart.txt"; //输入正常线网文件
-    trojan_in_txt_path = "data_test/trojan.txt"; //输入木马文件
-    //out_csv_path = argv[2];
-    init();
-//    count_func();
-	count_sentence(5);
-//	outputcsv(" ");
-    //cout<<positive<<endl<<negtive;
+	string file_prefix[7] = {"RS232-T1000","RS232-T1100","RS232-T1200","RS232-T1300","RS232-T1400","RS232-T1500","RS232-T1600"};
+	int i =0;
+    string str1,str2;
+    str1 = file_prefix[i]+"/uart.txt";
+    str2 = file_prefix[i]+"/trojan.txt";
+    normal_in_txt_path = (char *)(str1.c_str());
+   	trojan_in_txt_path = (char *)(str2.c_str());
+    cout<<normal_in_txt_path<<trojan_in_txt_path<<endl;
+   	init();
+    //    count_func();
+	count_sentence(3,file_prefix[i],false,i);
+
 	return 0;
 }
 
@@ -362,7 +366,7 @@ void outputtxt(ofstream& outFile){
         }
     }
 }
-void output_Sentence_length(ofstream& outFile,int len){
+void output_Sentence_length(ofstream& outFile,int len, bool isText){
 	int size = R[len].size()/(len+1);
 //	if(R[len+1].size()==0){
 //        size3 = 1;
@@ -375,19 +379,20 @@ void output_Sentence_length(ofstream& outFile,int len){
                 	if(v[R[len][len*i+j]].tag) tro_flag = true;
                 	outFile<<v[R[len][(len+1)*i+j]].type<<" ";
 				}
-//                if(tro_flag){
-//                    outFile<<","<<"1";
-//                    negtive++;
-//                }
-//                else 
-//                {
-//                    outFile<<","<<"0";
-//                    positive++;
-//                }
+				if(!isText){
+					if(tro_flag){
+                    	outFile<<","<<"1";
+                    	negtive++;
+                	}
+                	else{
+                    	outFile<<","<<"0";
+                    	positive++;
+					}
+				}
                 outFile<<endl;
 	}
 }
-void output_PandN_sentence(ofstream& outFile,int len){
+void output_PandN_sentence(ofstream& outFile,int len,bool isText){
 	int len_1 = len+1;
 	int size1 = R[len].size()/(len+1);
 	int size2 = R[len_1].size()/(len+1);
@@ -414,28 +419,37 @@ void output_PandN_sentence(ofstream& outFile,int len){
                 	outFile<<v[R[len][len_1*i+k]].type<<" ";
 				}
 			}
-			if(tro_flag){
-                outFile<<","<<"1";
-                negtive++;
-            }
-            else {
-                outFile<<","<<"0";
-                positive++;
-            }
+			if(!isText){
+				if(tro_flag){
+                    outFile<<","<<"1";
+                    negtive++;
+                }
+                else{
+                    outFile<<","<<"0";
+                    positive++;
+				}
+			}
 			outFile<<endl;
 		}
 	}
 	 
 }
-void count_sentence(int len){
+void count_sentence(int len,string base_path,bool isText,int file_index){
 	ofstream outFile;  
-//    outFile.open("data_test/text.txt", ios::out); 
-	outFile.open("data_test/data.csv",ios::out);
-	outFile<<"text"<<","<<"label"<<endl;
+	if(isText){
+		string path = base_path+"/text.txt";
+		cout<<path<<endl;
+		outFile.open(path, ios::out); 
+	}
+	else{
+		string path = base_path+"/data"+to_string(file_index)+".csv";
+		outFile.open(path,ios::out);
+		outFile<<"text"<<","<<"label"<<endl; 
+	}
 	for(int i=1;i<id;i++){
 		if(v[i].type != "line"){
         //    R[0].pb(v[i].name);
-        //    cout<<R[0][0]<<endl;
+//            cout<<v[i].name<<endl;
 			path_all(ed, i, i, len, rpath, -1, "", false);
 			//path_all(edf, i, i, 1, rpath, -1, "");
 			ms(vis, false);
@@ -447,12 +461,9 @@ void count_sentence(int len){
 //			path_all(ed, i, i, 3, rpath, -1, "");
 			//path_all(edf, i, i, 3, rpath, -1, "");
 //			ms(vis, false);
-			output_PandN_sentence(outFile,len);
+			output_PandN_sentence(outFile,len,isText);
 //			outputtxt(outFile);
 //			output_Sentence_length(outFile,len);
-//			R[1].clear();
-//			R[2].clear();
-//			R[3].clear();
             R[len].clear();
             R[len+1].clear();
 		}
