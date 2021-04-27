@@ -18,7 +18,7 @@ parser.add_argument('-lr', type=float, default=0.001, help='学习率')
 parser.add_argument('-batch-size', type=int, default=128)
 parser.add_argument('-epoch', type=int, default=10)
 parser.add_argument('-filter-num', type=int, default=2, help='卷积核的个数')
-parser.add_argument('-filter-sizes', type=str, default='3,4,5', help='不同卷积核大小')
+parser.add_argument('-filter-sizes', type=str, default='2,3', help='不同卷积核大小')
 parser.add_argument('-embedding-dim', type=int, default=100, help='词向量的维度')
 parser.add_argument('-dropout', type=float, default=0.5)
 parser.add_argument('-label-num', type=int, default=2, help='标签个数')
@@ -62,11 +62,17 @@ def train(args, train_iter, dev_iter, k):
     last_step = 0
     plt_loss: list = []
     plt_acc: list = []
+    plt_TNR: list = []
+    plt_TPR: list = []
+    plt_FPR: list = []
+    plt_PRE: list = []
+    plt_F1: list = []
     plt_epoch: list = []
     for epoch in range(1, args.epoch + 1):
         print('*' * 25, 'Epoch:', epoch, '*' * 25)
         stime = time.time()
         Loss_sum, Acc_sum, steps = 0.0, 0.0, 0
+        TP, TN, FN, FP = 0, 0, 0, 0
         model.train()
         for batch in train_iter:
 
@@ -77,8 +83,18 @@ def train(args, train_iter, dev_iter, k):
             if args.cuda:
                 feature, target = feature.cuda(), target.cuda()
             optimizer.zero_grad()
-
             logits = model(feature)
+
+            # TP    predict 和 label 同时为1
+            TP += ((torch.max(logits, 1)[1] == 1) & (target == 1)).cpu().sum()
+            # TN    predict 和 label 同时为0
+            TN += ((torch.max(logits, 1)[1] == 0) & (target == 0)).cpu().sum()
+            # FN    predict 0 label 1
+            FN += ((torch.max(logits, 1)[1] == 0) & (target == 1)).cpu().sum()
+            # FP    predict 1 label 0
+            FP += ((torch.max(logits, 1)[1] == 1) & (target == 0)).cpu().sum()
+
+
             loss = F.cross_entropy(logits, target)
             loss.backward()
             Loss_sum += loss.cpu().item()
@@ -116,6 +132,13 @@ def train(args, train_iter, dev_iter, k):
             #         # raise KeyboardInterrupt
             #         break;
 
+        plt_TPR.append(TP / (TP + FN))
+        plt_TNR.append(TN / (FP + TN))
+        plt_FPR.append(FP / (FP + TN))
+        Pre = TP / (TP + FP)
+        recall = TP / (TP + FN)
+        plt_PRE.append(Pre)
+        plt_F1.append(2*(Pre*recall)/(Pre+recall))
         plt_loss.append(Loss_sum / steps)
         plt_acc.append(Acc_sum / steps)
         plt_epoch.append(epoch)
@@ -130,13 +153,54 @@ def train(args, train_iter, dev_iter, k):
 
         etime = time.time()
         print('第', epoch, '个epoch耗时：{:.4f}s'.format(etime - stime))
-
+    plt.figure(0)
     plt.plot(plt_epoch, plt_loss, label='Loss')
-    # plt.plot(plt_epoch, plt_acc, label='Train acc')
     plt.title("TextCNN")
     plt.ylabel('Loss')
     plt.xlabel('epoch')
-    plt.savefig('plot_dir/fold_{}.png'.format(k))
+    plt.savefig('plot_dir/merge/fold_{}_loss.png'.format(k))
+
+    plt.figure(1)
+    plt.plot(plt_epoch, plt_acc, label='Train acc')
+    plt.title("TextCNN")
+    plt.ylabel('Train acc')
+    plt.xlabel('epoch')
+    plt.savefig('plot_dir/merge/fold_{}_acc.png'.format(k))
+
+    plt.figure(2)
+    plt.plot(plt_epoch, plt_PRE, label='Precision')
+    plt.title("TextCNN")
+    plt.ylabel('Precision')
+    plt.xlabel('epoch')
+    plt.savefig('plot_dir/merge/fold_{}_Precision.png'.format(k))
+
+    plt.figure(3)
+    plt.plot(plt_epoch, plt_F1, label='F1')
+    plt.title("TextCNN")
+    plt.ylabel('F1')
+    plt.xlabel('epoch')
+    plt.savefig('plot_dir/merge/fold_{}_F1.png'.format(k))
+
+    plt.figure(4)
+    plt.plot(plt_epoch, plt_FPR, label='FPR')
+    plt.title("TextCNN")
+    plt.ylabel('FPR')
+    plt.xlabel('epoch')
+    plt.savefig('plot_dir/merge/fold_{}_FPR.png'.format(k))
+
+    plt.figure(5)
+    plt.plot(plt_epoch, plt_TPR, label='TPR')
+    plt.title("TextCNN")
+    plt.ylabel('TPR')
+    plt.xlabel('epoch')
+    plt.savefig('plot_dir/merge/fold_{}_TPR.png'.format(k))
+
+    plt.figure(6)
+    plt.plot(plt_FPR, plt_TPR, label='AUC')
+    plt.title("TextCNN")
+    plt.ylabel('True positive rate')
+    plt.xlabel('False positive rate')
+    plt.savefig('plot_dir/merge/fold_{}_AUC.png'.format(k))
     return model
 
 
@@ -182,8 +246,8 @@ def k_fold_train(args):
     test_acc_sum, test_loss_sum = 0, 0
     k = 10
     # path_test = 'data/tmp/postive_samples.csv'
-    data_path = 'data_test/data.csv'
-    test_path = 'data_test/data6.csv'
+    data_path = 'data_test/data/data.csv'
+    test_path = 'data_test/data/data6.csv'
     csv_data = pd.read_csv(data_path, header=0)
     test_data = pd.read_csv(test_path, header=0)
     for i in range(k):

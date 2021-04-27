@@ -26,22 +26,22 @@ def csv_spilit():
     print('处理完成')
 
 
-def csv_merge(path):
+def csv_merge(path, destination):
     csv_list = glob.glob(path)  # 查看同文件夹下的csv文件数
     print(u'共发现%s个CSV文件' % len(csv_list))
     print(csv_list)
     print(u'正在处理............')
     # 读取第一个CSV文件并包含表头
     df = pd.read_csv(csv_list[0])
-    df.to_csv('data_test/data.csv', encoding="utf_8_sig", index=False)
+    df.to_csv(destination, encoding="utf_8_sig", index=False)
     for i in range(1, len(csv_list)):  # 循环读取同文件夹下的csv文件
         df = pd.read_csv(csv_list[i])
-        df.to_csv('data_test/data.csv', encoding="utf_8_sig", index=False, header=False, mode='a+')
+        df.to_csv(destination, encoding="utf_8_sig", index=False, header=False, mode='a+')
     print(u'合并完毕！')
 
 
-def samples_equal_split_process():
-    csv_list = glob.glob('data/*.csv')  # 查看同文件夹下的csv文件数
+def samples_equal_split_process(source):
+    csv_list = glob.glob(source)  # 查看同文件夹下的csv文件数
     print(u'共发现%s个CSV文件' % len(csv_list))
     df = pd.read_csv(csv_list[0])
     data = np.array(df)
@@ -114,25 +114,13 @@ def postive_samples_process():
     df1 = pd.DataFrame(df1, columns=['text', 'label'])
     df1.to_csv('data/postive_samples.csv', index=False)
 
-def generate_equal_data():
-    samples_equal_split_process()
-    csv_merge('data/tmp/*.csv')
+def generate_equal_data(source, destination):
+    samples_equal_split_process(source=source)
+    csv_merge(path='data/tmp/*.csv', destination=destination)
 def generate_normal_data():
-    csv_merge('data/*.csv')
-# def plot_loss_acc(n):
-#     y = []
-#     for i in range(0,n):
-#         # enc = np.load('D:\MobileNet_v1\plan1-AddsingleLayer\loss\epoch_{}.npy'.format(i))
-#         # torch.save(Loss0, 'plot_dir/fold_{}_epoch_{}_'.format(k, epoch))
-#         enc = torch.load('plot_dir/fold_1_epoch_{}_'.format(i))
-#         tempy = list(enc)
-#         y += tempy
-#     x = range(0,len(y))
-#     plt.plot(x, y, '.-')
-#     plt_title = 'BATCH_SIZE = 32; LEARNING_RATE:0.001'
-#     plt.title(plt_title)
-#     plt.xlabel('per 200 times')
-#     plt.ylabel('LOSS')
-#     # plt.savefig(file_name)
-#     plt.show()
-csv_merge('data/*.csv')
+    csv_merge(path='dataset/tmp/*.csv', destination='dataset/data_equal/data6.csv')
+
+
+# generate_equal_data(source='data/level_6/*.csv', destination='dataset/data_equal/data4.csv')
+# generate_normal_data()
+# generate_normal_data()

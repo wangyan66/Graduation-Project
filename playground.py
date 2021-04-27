@@ -30,10 +30,9 @@ def get_kfold_data(k, i, X, y):
 # out = m(X)
 # print(out)
 # X.view()
-print(range(1,10))
-haha = [i for i in range(1,10)]
-print(haha)
-isinstance(haha,list)
+x  = [1,0,1,0,0]
+y  = [1,0,1,1,1]
+print(x == y)
 # x = torch.rand((2,2,3))
 # y = torch.rand((2,2,3))
 # print("x:",x)

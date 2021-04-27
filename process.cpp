@@ -62,7 +62,7 @@ void build(string str, int flag); //拆解、建图
 // ============ feature_count_function define ================
 void count_func();
 void count_sentence(int len,string base_path,bool isText,int file_index);
-void outputcsv(string str); 
+void outputcsv(string str);  
 void output_Sentence_length(ofstream& outFile,int len,bool isText);
 char* normal_in_txt_path;
 char* trojan_in_txt_path;
@@ -71,7 +71,7 @@ void output_PandN_sentence(ofstream& outFile,int len,bool isText);
 // ============主函数=====================
 int main(int argc, char* argv[]){
 	string file_prefix[7] = {"RS232-T1000","RS232-T1100","RS232-T1200","RS232-T1300","RS232-T1400","RS232-T1500","RS232-T1600"};
-	int i =0;
+	int i = 6;
     string str1,str2;
     str1 = file_prefix[i]+"/uart.txt";
     str2 = file_prefix[i]+"/trojan.txt";
@@ -80,7 +80,7 @@ int main(int argc, char* argv[]){
     cout<<normal_in_txt_path<<trojan_in_txt_path<<endl;
    	init();
     //    count_func();
-	count_sentence(3,file_prefix[i],false,i);
+	count_sentence(5,file_prefix[i],false,i);
 
 	return 0;
 }
@@ -437,13 +437,13 @@ void output_PandN_sentence(ofstream& outFile,int len,bool isText){
 void count_sentence(int len,string base_path,bool isText,int file_index){
 	ofstream outFile;  
 	if(isText){
-		string path = base_path+"/text.txt";
+		string path = "dataset/"+base_path+"_level"+to_string(len)+"_text.txt";
 		cout<<path<<endl;
-		outFile.open(path, ios::out); 
+		outFile.open(path, ios::out|ios::binary); 
 	}
 	else{
-		string path = base_path+"/data"+to_string(file_index)+".csv";
-		outFile.open(path,ios::out);
+		string path ="data/data"+to_string(file_index)+".csv";
+		outFile.open(path,ios::out|ios::binary);
 		outFile<<"text"<<","<<"label"<<endl; 
 	}
 	for(int i=1;i<id;i++){
