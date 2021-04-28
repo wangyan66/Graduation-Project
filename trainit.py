@@ -8,6 +8,7 @@ from textcnn import TextCNN
 import pandas as pd
 import time
 import matplotlib.pyplot as plt
+import psutil
 from torchsummary import summary
 
 from collections.abc import Iterable
@@ -17,14 +18,14 @@ parser = argparse.ArgumentParser(description='TextCNN text classifier')
 parser.add_argument('-lr', type=float, default=0.001, help='学习率')
 parser.add_argument('-batch-size', type=int, default=128)
 parser.add_argument('-epoch', type=int, default=10)
-parser.add_argument('-filter-num', type=int, default=2, help='卷积核的个数')
+parser.add_argument('-filter-num', type=int, default=4, help='卷积核的个数')
 parser.add_argument('-filter-sizes', type=str, default='2,3', help='不同卷积核大小')
 parser.add_argument('-embedding-dim', type=int, default=100, help='词向量的维度')
 parser.add_argument('-dropout', type=float, default=0.5)
 parser.add_argument('-label-num', type=int, default=2, help='标签个数')
 parser.add_argument('-static', type=bool, default=True, help='是否使用预训练词向量')
 parser.add_argument('-fine-tune', type=bool, default=True, help='预训练词向量是否要微调')
-parser.add_argument('-cuda', type=bool, default=False)
+parser.add_argument('-cuda', type=bool, default=True)
 parser.add_argument('-log-interval', type=int, default=1000, help='经过多少iteration记录一次训练状态')
 parser.add_argument('-test-interval', type=int, default=100, help='经过多少iteration对验证集进行测试')
 parser.add_argument('-early-stopping', type=int, default=1000, help='早停时迭代的次数')
@@ -84,7 +85,6 @@ def train(args, train_iter, dev_iter, k):
                 feature, target = feature.cuda(), target.cuda()
             optimizer.zero_grad()
             logits = model(feature)
-
             # TP    predict 和 label 同时为1
             TP += ((torch.max(logits, 1)[1] == 1) & (target == 1)).cpu().sum()
             # TN    predict 和 label 同时为0
@@ -246,17 +246,23 @@ def k_fold_train(args):
     test_acc_sum, test_loss_sum = 0, 0
     k = 10
     # path_test = 'data/tmp/postive_samples.csv'
-    data_path = 'data_test/data/data.csv'
-    test_path = 'data_test/data/data6.csv'
+    data_path = 'data_test/data_equal/data.csv'
+    test_path = 'data_test/data_equal/data6.csv'
     csv_data = pd.read_csv(data_path, header=0)
     test_data = pd.read_csv(test_path, header=0)
     for i in range(k):
         stime = time.time()
         print('*' * 25, '第', i + 1, '折', '*' * 25)
+
         train_data, valid_data = get_kfold_data(k, i, csv_data)  # 获取k折交叉验证的训练和验证数据
+        # print(train_data.device)
+        # print(valid_data.device)
+
         train_iter, dev_iter, test_iter = data_process.load_data(args, train_data, valid_data, test_data)  # 返回对应的迭代器
+
         print('数据处理完成')
         model = train(args, train_iter, dev_iter, i)  # 开始训练
+
         # 每份数据进行训练
         # train_acc, val_acc = traink(snet, *data, batch_size, learning_rate,  num_epochs) 
         test_acc, test_loss = test(test_iter, model, args)
@@ -302,5 +308,7 @@ def test(data_iter, model, args):
                                                                  size))
     return accuracy, avg_loss
 
-
+def showMem():
+    mem = psutil.virtual_memory()
+    print('get data之前剩余内存{:.6f}GB'.format(float(mem.free/1024/1024/1024)))
 k_fold_train(args)

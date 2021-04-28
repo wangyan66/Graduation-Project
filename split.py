@@ -120,7 +120,20 @@ def generate_equal_data(source, destination):
 def generate_normal_data():
     csv_merge(path='dataset/tmp/*.csv', destination='dataset/data_equal/data6.csv')
 
+def shuffle_csv():
+
+    # df3 = pd.read_csv("test_samples.csv")
+    # df0 = df3.sample(frac=1)
+    # df0.to_csv("test_samples.csv", index=False)
+    df1 = pd.read_csv("data_test/data_equal/data.csv")
+    df2 = pd.read_csv("data_test/data_equal/data6.csv")
+    for i in range(1, 30):
+        df1 = df1.sample(frac=1)
+        df2 = df2.sample(frac=1)
+    df1.to_csv("data_test/data_equal/data.csv", index=False)
+    df2.to_csv("data_test/data_equal/data6.csv", index=False)
 
 # generate_equal_data(source='data/level_6/*.csv', destination='dataset/data_equal/data4.csv')
 # generate_normal_data()
 # generate_normal_data()
+shuffle_csv()
